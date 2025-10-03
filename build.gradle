@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "info.solidsoft.gradle.pitest:gradle-pitest-plugin:1.15.0"
+    }
+}
+
 plugins {
   id "java"
 
@@ -9,7 +18,11 @@ plugins {
 
   id "licensing-defaults"
   id "sonarqube-defaults"
+
+  id 'jacoco'
 }
+
+apply plugin: 'info.solidsoft.pitest'
 
 group = gurkenlabs_group
 
@@ -22,4 +35,44 @@ java {
   toolchain {
     languageVersion = JavaLanguageVersion.of(24)
   }
+}
+
+// JaCoCo settings
+jacoco {
+    toolVersion = "0.8.10"
+}
+
+// Ensure JaCoCo runs after tests
+tasks.test {
+    useJUnitPlatform()   // if using JUnit 5
+    finalizedBy tasks.jacocoTestReport
+}
+
+// Generate HTML & XML reports
+tasks.jacocoTestReport {
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+    }
+}
+
+// PIT settings
+
+dependencies {
+    pitest 'org.pitest:pitest-junit5-plugin:1.2.1'
+}
+
+pitest {
+    targetClasses = ['de.gurkenlabs.litiengine.*']
+    targetTests = ['de.gurkenlabs.litiengine.*Test', 'de.gurkenlabs.litiengine.*Tests']
+    pitestVersion = '1.15.0'
+    junit5PluginVersion = '1.2.1'
+    outputFormats = ['XML', 'HTML']
+    threads = 4
+    timestampedReports = false
+    verbose = true
+    useClasspathFile = true
+    failWhenNoMutations = false       // continue even if no mutations generated
+    skipFailingTests = true           // ignore failing tests
+    jvmArgs = ['--enable-preview']
 }
